@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Frontend (Next.js)
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api
+      - NEXT_PUBLIC_BASE_URL=http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - auralynx-network
+
+  # Backend (Django)
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=your-production-secret-key-here
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - DATABASE_URL=postgresql://auralynx:password@db:5432/auralynx_db
+      - HUGGINGFACE_API_TOKEN=${HUGGINGFACE_API_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TORCH_DEVICE=cpu
+      - USE_GPU=False
+      - MOCK_AI_RESPONSES=False
+    volumes:
+      - models_cache:/app/models
+      - audio_temp:/app/temp_audio
+      - media_files:/app/media
+    depends_on:
+      - db
+      - redis
+    networks:
+      - auralynx-network
+    restart: unless-stopped
+
+  # Database (PostgreSQL)
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=auralynx_db
+      - POSTGRES_USER=auralynx
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - auralynx-network
+    restart: unless-stopped
+
+  # Redis (for caching and task queue)
+  redis:
+    image: redis:7-alpine
+    networks:
+      - auralynx-network
+    restart: unless-stopped
+
+  # Nginx (reverse proxy)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - media_files:/var/media:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - auralynx-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  models_cache:
+  audio_temp:
+  media_files:
+
+networks:
+  auralynx-network:
+    driver: bridge
