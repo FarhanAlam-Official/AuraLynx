@@ -33,12 +33,15 @@
 ## 🚀 Demo
 
 ### Live Demo
+
 🌐 **[Try AuraLynx Live](https://auralynx-demo.vercel.app)** *(Coming Soon)*
 
 ### Quick Start Video
+
 📺 **[Watch Demo Video](https://youtube.com/watch?v=demo)** *(Coming Soon)*
 
 ### Example Generation
+
 ```
 Input: "Create an upbeat pop song about chasing dreams"
 Output: Complete 3-minute song with lyrics, melody, and vocals
@@ -93,12 +96,14 @@ Time: ~2-5 minutes on GPU, ~15-30 minutes on CPU
 ### 🚀 Quick Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/yourusername/auralynx.git
    cd auralynx
    ```
 
 2. **Backend Setup**
+
    ```bash
    cd backend
    python -m venv venv
@@ -115,6 +120,7 @@ Time: ~2-5 minutes on GPU, ~15-30 minutes on CPU
    ```
 
 3. **Frontend Setup**
+
    ```bash
    cd frontend
    npm install
@@ -127,8 +133,8 @@ Time: ~2-5 minutes on GPU, ~15-30 minutes on CPU
    ```
 
 4. **Access the Application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000/api
+   - Frontend: <http://localhost:3000>
+   - Backend API: <http://localhost:8000/api>
 
 ### 🐳 Docker Setup (Alternative)
 
@@ -144,6 +150,7 @@ docker-compose up --build
 Create `.env` files in both directories:
 
 **Backend (.env)**
+
 ```env
 DJANGO_SECRET_KEY=your-secret-key-here
 DEBUG=True
@@ -153,6 +160,7 @@ HUGGINGFACE_API_KEY=your-hf-token-here
 ```
 
 **Frontend (.env.local)**
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
@@ -160,6 +168,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ## 🎮 Usage
 
 ### 1. **Text-to-Song Generation**
+
 ```typescript
 // Example API call
 const response = await fetch('/api/generate-lyrics/', {
@@ -173,6 +182,7 @@ const response = await fetch('/api/generate-lyrics/', {
 ```
 
 ### 2. **Voice-to-Song Generation**
+
 ```typescript
 // Upload audio file
 const formData = new FormData();
@@ -185,6 +195,7 @@ const response = await fetch('/api/transcribe/', {
 ```
 
 ### 3. **Complete Pipeline**
+
 ```bash
 Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
 ```
@@ -202,6 +213,7 @@ Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
 | `POST` | `/api/mix-audio/` | Mix final song |
 
 ### Example Response
+
 ```json
 {
   "success": true,
@@ -235,6 +247,7 @@ Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
 ## 🎨 Technology Stack
 
 ### Frontend
+
 - **Framework**: Next.js 16 with TypeScript
 - **Styling**: Tailwind CSS + Custom Animations
 - **UI Components**: Custom component library
@@ -242,6 +255,7 @@ Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
 - **State Management**: React Hooks + Context
 
 ### Backend
+
 - **Framework**: Django 4.2 + Django REST Framework
 - **AI/ML**: Hugging Face Transformers, PyTorch
 - **Audio Processing**: FFmpeg, pydub, librosa
@@ -249,6 +263,7 @@ Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
 - **APIs**: RESTful API with JSON responses
 
 ### AI & Audio
+
 - **Speech Recognition**: OpenAI Whisper
 - **Text Generation**: GPT-2, Custom models
 - **Audio Synthesis**: Custom neural audio generation
@@ -259,6 +274,7 @@ Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
 ### Production Deployment
 
 1. **Using Vercel + Railway**
+
    ```bash
    # Frontend on Vercel
    vercel --prod
@@ -269,6 +285,7 @@ Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
    ```
 
 2. **Using Docker**
+
    ```bash
    docker build -t auralynx-frontend ./frontend
    docker build -t auralynx-backend ./backend
@@ -291,16 +308,19 @@ Input → Transcription → Lyrics → Instrumentals → Vocals → Mixed Song
 We love contributions! Here's how to get started:
 
 ### 🐛 Bug Reports
+
 - Use GitHub Issues with the "bug" label
 - Include steps to reproduce
 - Provide system information
 
 ### ✨ Feature Requests
+
 - Use GitHub Issues with the "enhancement" label
 - Describe the feature and use case
 - Include mockups if applicable
 
 ### 💻 Development Setup
+
 ```bash
 # Fork the repository
 git clone https://github.com/yourusername/auralynx.git
@@ -316,6 +336,7 @@ git push origin feature/amazing-feature
 ```
 
 ### 📋 Guidelines
+
 - Follow code style (ESLint + Prettier)
 - Add tests for new features
 - Update documentation
@@ -326,6 +347,7 @@ git push origin feature/amazing-feature
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 ### Model Licenses
+
 - **Generated Content**: Your generated songs are your property
 - **AI Models**: All models use permissive licenses (MIT, Apache 2.0)
 - **Commercial Use**: ✅ Fully allowed for all components
@@ -333,6 +355,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ## 🌟 Roadmap
 
 ### 🎯 Version 2.0
+
 - [ ] **Real-time Generation**: Streaming audio generation
 - [ ] **Voice Cloning**: Clone any voice for vocals
 - [ ] **Advanced Mixing**: Professional DAW-level mixing
@@ -340,6 +363,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - [ ] **Mobile App**: Native iOS/Android apps
 
 ### 🎯 Version 3.0
+
 - [ ] **Live Performance**: Real-time song generation for live shows
 - [ ] **AI Mastering**: Automatic professional mastering
 - [ ] **Marketplace**: Share and sell generated songs
@@ -357,7 +381,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/auralynx/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/auralynx/discussions)
-- 📧 **Email**: support@auralynx.dev
+- 📧 **Email**: <support@auralynx.dev>
 - 🐦 **Twitter**: [@AuraLynxAI](https://twitter.com/AuraLynxAI)
 - 💬 **Discord**: [Join Community](https://discord.gg/auralynx)
 

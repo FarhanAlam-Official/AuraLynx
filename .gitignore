@@ -109,11 +109,18 @@ ENV/
 backend/venv/
 backend/env/
 
-# Environment Variables
+# Environment Variables - All environments
 .env
+.env.*
+!.env.example
+!.env.*.example
+# Specific environment files
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
 
 # Django Secret Key
