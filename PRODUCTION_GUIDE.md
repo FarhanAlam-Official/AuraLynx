@@ -46,40 +46,21 @@ cd AuraLynx
 
 ### 2. **Set Environment Variables**
 
-```bash
-# Copy and edit production environment files
-cp backend/.env.production backend/.env
-cp frontend/.env.production frontend/.env
+Environment variables are described in detail in `docs/ENVIRONMENT.md`. At a
+high level you will need to provide:
 
-# Edit the files with your actual values
-nano backend/.env
-nano frontend/.env
-```
+- Backend: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`,
+  `DATABASE_URL` (for Postgres), `HUGGINGFACE_API_TOKEN`, and optional
+  `OPENAI_API_KEY`, along with model/cache and logging settings.
+- Frontend: `NEXT_PUBLIC_API_URL` (pointing to your backend `/api` route) and
+  `NEXT_PUBLIC_BASE_URL` (public URL of the frontend).
 
-### 3. **Required Environment Variables**
+In most hosting platforms you set these directly in the environment. If you are
+running with Docker Compose, you can use an `.env` file or pass them via the
+`environment` section in `docker-compose.yml`.
 
-#### **Backend (.env):**
-
-```env
-DEBUG=False
-SECRET_KEY=your-super-secret-production-key-here
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-DATABASE_URL=postgresql://username:password@db:5432/auralynx_db
-HUGGINGFACE_API_TOKEN=hf_your_actual_token_here
-OPENAI_API_KEY=sk-your_actual_key_here  # Optional
-CORS_ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
-TORCH_DEVICE=cuda  # or cpu if no GPU
-USE_GPU=True  # or False if no GPU
-MOCK_AI_RESPONSES=False
-```
-
-#### **Frontend (.env):**
-
-```env
-NEXT_PUBLIC_API_URL=https://yourdomain.com/api
-NEXT_PUBLIC_BASE_URL=https://yourdomain.com
-NEXT_PUBLIC_MOCK_API_RESPONSES=false
-```
+For an end-to-end example (Vercel frontend + Docker backend), see
+`docs/DEPLOYMENT.md`.
 
 ### 4. **Deploy with Docker**
 

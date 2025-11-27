@@ -42,7 +42,7 @@
 
 ### Example Generation
 
-```
+```bash
 Input: "Create an upbeat pop song about chasing dreams"
 Output: Complete 3-minute song with lyrics, melody, and vocals
 Time: ~2-5 minutes on GPU, ~15-30 minutes on CPU
