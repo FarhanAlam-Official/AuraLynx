@@ -11,7 +11,7 @@ The following environment variables are now configured:
 
 ### API Configuration
 
-- NEXT_PUBLIC_API_URL=<http://localhost:8000/api> (backend API endpoint)
+- NEXT_PUBLIC_API_URL=http://localhost:8000/api (backend API endpoint)
 - NEXT_PUBLIC_BASE_URL=<http://localhost:3000> (frontend URL)
 
 ### Feature Flags
