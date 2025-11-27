@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { buildApiUrl } from '@/lib/utils'
 import { ArrowLeft, Music, Headphones } from 'lucide-react'
 import LoadingSpinner from './loading-spinner'
 
@@ -23,6 +24,7 @@ export default function GenerationPage({
 }: GenerationPageProps) {
   const [currentStep, setCurrentStep] = useState<GenerationStep>('instrumental')
   const [progress, setProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     // Start the real generation process
@@ -31,12 +33,13 @@ export default function GenerationPage({
 
   const generateAudio = async () => {
     try {
+      setError(null)
       // Step 1: Generate Instrumental
       console.log('🎵 Generating instrumental...')
       setCurrentStep('instrumental')
       setProgress(20)
       
-      const instrumentalResponse = await fetch('http://localhost:8000/api/generate-instrumental/', {
+      const instrumentalResponse = await fetch(buildApiUrl('/generate-instrumental/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lyrics, genre })
@@ -54,7 +57,7 @@ export default function GenerationPage({
       console.log('🎤 Generating vocals...')
       setCurrentStep('vocals')
       
-      const vocalsResponse = await fetch('http://localhost:8000/api/generate-vocals/', {
+      const vocalsResponse = await fetch(buildApiUrl('/generate-vocals/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lyrics, genre })
@@ -72,7 +75,7 @@ export default function GenerationPage({
       console.log('🔄 Mixing audio tracks...')
       setCurrentStep('mixing')
       
-      const mixResponse = await fetch('http://localhost:8000/api/mix-audio/', {
+      const mixResponse = await fetch(buildApiUrl('/mix-audio/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -102,7 +105,13 @@ export default function GenerationPage({
       
     } catch (error) {
       console.error('❌ Generation failed:', error)
-      // Handle error - could show error state
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while generating your song.',
+      )
+      setCurrentStep('instrumental')
+      setProgress(0)
     }
   }
 
@@ -213,6 +222,26 @@ export default function GenerationPage({
                 style={{ width: `${progress}%` }}
               />
             </div>
+
+            {/* Error message / retry */}
+            {error && (
+              <div className="bg-red-900/40 border border-red-700 rounded-lg p-4 text-left">
+                <p className="text-red-300 text-sm mb-2">
+                  We couldn&apos;t finish generating your song.
+                </p>
+                <p className="text-red-400 text-xs mb-3 break-words">
+                  {error}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-red-500 text-red-200 hover:bg-red-900/60"
+                  onClick={generateAudio}
+                >
+                  Try again
+                </Button>
+              </div>
+            )}
 
             {/* Details */}
             <div className="bg-slate-900/50 rounded-lg p-4 text-left">

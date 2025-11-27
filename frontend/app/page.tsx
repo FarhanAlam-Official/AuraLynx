@@ -6,8 +6,9 @@ import InputPage from '@/components/input-page'
 import LyricsPage from '@/components/lyrics-page'
 import GenerationPage from '@/components/generation-page'
 import PreviewPage from '@/components/preview-page'
+import MySongsPage from '@/components/my-songs-page'
 
-type Stage = 'landing' | 'input' | 'lyrics' | 'generation' | 'preview'
+type Stage = 'landing' | 'input' | 'lyrics' | 'generation' | 'preview' | 'mySongs'
 
 interface AppState {
   inputText: string
@@ -94,7 +95,11 @@ export default function Home() {
           vocalsUrl={appState.generatedVocals}
           finalMixUrl={appState.finalMix}
           onRestart={() => setStage('landing')}
+          onViewSongs={() => setStage('mySongs')}
         />
+      )}
+      {stage === 'mySongs' && (
+        <MySongsPage onBack={() => setStage('landing')} />
       )}
     </div>
   )
