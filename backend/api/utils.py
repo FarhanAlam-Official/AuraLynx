@@ -39,6 +39,8 @@ try:
 except ImportError:
     PYDUB_AVAILABLE = False
 
+import requests
+
 
 def transcribe_audio(audio_path: str) -> str:
     """
@@ -105,59 +107,178 @@ Format the lyrics with:
 Make the lyrics creative, rhythmic, and appropriate for {genre} music."""
 
     try:
-        # Use Hugging Face API for reliable lyrics generation
+        # Use OpenAI-compatible API for lyrics generation
+        # Can work with OpenAI, Together AI, OpenRouter, etc.
         import requests
         import json
+        import random
         
-        # Get API token
-        api_token = getattr(settings, 'HUGGINGFACE_API_TOKEN', None)
-        if not api_token:
-            raise RuntimeError("Hugging Face API token not found. Please set HUGGINGFACE_API_TOKEN in your .env file.")
-        
-        # Try multiple approaches for lyrics generation
         lyrics_generated = False
         lyrics_result = ""
         
-        # Approach 1: Try the new Hugging Face API
-        try:
-            api_url = "https://router.huggingface.co/hf-inference/models/gpt2-large"
-            headers = {"Authorization": f"Bearer {api_token}"}
-            
-            structured_prompt = f"Write a {genre} song about {input_text}:\n\nVerse 1:"
-            
-            payload = {
-                "inputs": structured_prompt,
-                "parameters": {
-                    "max_new_tokens": 150,
-                    "temperature": 0.8,
-                    "return_full_text": False
+        # Try OpenAI API if configured
+        openai_key = getattr(settings, 'OPENAI_API_KEY', None)
+        if openai_key and openai_key != 'your-openai-api-key-here' and openai_key != 'sk-your_openai_api_key_here':
+            try:
+                print("🤖 Using OpenAI API for lyrics generation...")
+                api_url = "https://api.openai.com/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {openai_key}",
+                    "Content-Type": "application/json"
                 }
-            }
-            
-            response = requests.post(api_url, headers=headers, json=payload, timeout=20)
-            
-            if response.status_code == 200:
-                result = response.json()
-                if isinstance(result, list) and len(result) > 0:
-                    generated_text = result[0].get('generated_text', '').strip()
-                    if len(generated_text) > 20:  # Valid generation
-                        lyrics_result = structured_prompt + "\n" + generated_text
+                
+                system_prompt = f"""You are a professional songwriter. Write complete, creative song lyrics in {genre} style."""
+                
+                user_prompt = f"""Write a complete {genre} song about: {input_text}
+
+Create lyrics with this exact structure:
+[Verse 1]
+(4-6 lines)
+
+[Chorus]
+(4-6 lines)
+
+[Verse 2]
+(4-6 lines)
+
+[Chorus]
+(repeat)
+
+[Bridge]
+(4-6 lines)
+
+[Outro]
+(2-4 lines)
+
+Make it creative, catchy, and unique. Only output the lyrics, no explanations."""
+                
+                payload = {
+                    "model": "gpt-3.5-turbo",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    "temperature": 0.9,
+                    "max_tokens": 500
+                }
+                
+                response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    lyrics_result = result['choices'][0]['message']['content'].strip()
+                    if len(lyrics_result) > 50:
                         lyrics_generated = True
-                        print("✅ Generated lyrics using Hugging Face API")
-        except Exception as e:
-            print(f"Hugging Face API attempt failed: {e}")
+                        print("✅ Successfully generated lyrics using OpenAI")
+                        return lyrics_result
+                else:
+                    print(f"⚠️  OpenAI API failed: {response.status_code}")
+                    
+            except Exception as e:
+                print(f"⚠️  OpenAI API error: {str(e)}")
         
-        # Approach 2: If API fails, create intelligent template-based lyrics
+        # Try Groq API (Free tier with good models)
         if not lyrics_generated:
-            print("🎵 Creating intelligent template-based lyrics")
+            try:
+                print("🤖 Using Groq API for lyrics generation...")
+                # Groq offers free API with fast inference
+                api_url = "https://api.groq.com/openai/v1/chat/completions"
+                
+                # Try to get Groq API key from settings
+                groq_key = getattr(settings, 'GROQ_API_KEY', None)
+                if not groq_key:
+                    # If not configured, inform user
+                    print("⚠️  Groq API key not configured. Get free key from https://console.groq.com")
+                    raise RuntimeError("Groq API not configured")
+                
+                headers = {
+                    "Authorization": f"Bearer {groq_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": "mixtral-8x7b-32768",  # Free fast model
+                    "messages": [
+                        {"role": "system", "content": f"You are a professional songwriter specializing in {genre} music."},
+                        {"role": "user", "content": f"Write complete song lyrics for a {genre} song about: {input_text}\n\nFormat: [Verse 1], [Chorus], [Verse 2], [Chorus], [Bridge], [Outro]\nMake it creative and unique. Only lyrics, no explanations."}
+                    ],
+                    "temperature": 0.9,
+                    "max_tokens": 500
+                }
+                
+                response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    lyrics_result = result['choices'][0]['message']['content'].strip()
+                    if len(lyrics_result) > 50:
+                        lyrics_generated = True
+                        print("✅ Successfully generated lyrics using Groq")
+                        return lyrics_result
+                        
+            except Exception as e:
+                print(f"⚠️  Groq API error: {str(e)}")
+        
+        # Try Together AI (Free tier available)
+        if not lyrics_generated:
+            try:
+                print("🤖 Using Together AI for lyrics generation...")
+                api_url = "https://api.together.xyz/v1/chat/completions"
+                
+                together_key = getattr(settings, 'TOGETHER_API_KEY', None)
+                if not together_key:
+                    print("⚠️  Together AI key not configured. Get free key from https://api.together.xyz")
+                    raise RuntimeError("Together AI not configured")
+                
+                headers = {
+                    "Authorization": f"Bearer {together_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                    "messages": [
+                        {"role": "system", "content": f"Write song lyrics in {genre} style."},
+                        {"role": "user", "content": f"Create a complete {genre} song about: {input_text}\n\nFormat with [Verse 1], [Chorus], [Verse 2], [Chorus], [Bridge], [Outro]. Be creative and unique."}
+                    ],
+                    "temperature": 0.9,
+                    "max_tokens": 500
+                }
+                
+                response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    lyrics_result = result['choices'][0]['message']['content'].strip()
+                    if len(lyrics_result) > 50:
+                        lyrics_generated = True
+                        print("✅ Successfully generated lyrics using Together AI")
+                        return lyrics_result
+                        
+            except Exception as e:
+                print(f"⚠️  Together AI error: {str(e)}")
+        
+        # If all AI APIs fail, fall through to template generation
+        if not lyrics_generated:
+            print("⚠️  All AI APIs failed or not configured. Using template-based generation.")
+            print("💡 To use AI models, add one of these keys to your .env file:")
+            print("   - OPENAI_API_KEY (https://platform.openai.com/api-keys)")
+            print("   - GROQ_API_KEY (https://console.groq.com/keys) - FREE & FAST")
+            print("   - TOGETHER_API_KEY (https://api.together.xyz/settings/api-keys)")
+            raise RuntimeError("No AI API configured")
             
-            # Create more dynamic lyrics based on input and genre
-            words = input_text.lower().split()
-            key_word = words[0] if words else "dreams"
-            
-            # Genre-specific templates
-            if genre.lower() == 'rock':
-                lyrics_result = f"""Verse 1:
+    except Exception as main_error:
+        # Fallback: Create intelligent template-based lyrics
+        print(f"⚠️  AI generation failed: {str(main_error)}")
+        print("📝 Creating template-based lyrics as fallback.")
+        
+        # Create more dynamic lyrics based on input and genre
+        words = input_text.lower().split()
+        key_word = words[0] if words else "dreams"
+        
+        # Genre-specific templates
+        if genre.lower() == 'rock':
+            lyrics_result = f"""Verse 1:
 Thunder in the distance, {key_word} calling my name
 Electric guitars screaming, nothing's quite the same
 {input_text} burns inside me like a raging fire
@@ -189,9 +310,9 @@ In this rock and roll song
 
 Outro:
 {input_text}... our rock and roll dream"""
-            
-            elif genre.lower() == 'hip-hop':
-                lyrics_result = f"""Verse 1:
+        
+        elif genre.lower() == 'hip-hop':
+            lyrics_result = f"""Verse 1:
 Started from the bottom, now we here with {input_text}
 Every beat's a lesson, every rhyme's a test
 {key_word} in my pocket, dreams up in my head
@@ -218,9 +339,9 @@ From the streets to the stage, this is how we roll
 Outro:
 {input_text}, yeah, that's my story
 Hip-hop forever, this is our glory"""
-            
-            else:  # Pop and other genres
-                lyrics_result = f"""Verse 1:
+        
+        else:  # Pop and other genres
+            lyrics_result = f"""Verse 1:
 Dancing through the {input_text}
 Like a {genre} melody
 Every step feels magical
@@ -263,7 +384,7 @@ My {genre} dream come true"""
 
 def generate_music_track(lyrics: str, genre: str = 'pop') -> tuple:
     """
-    Generate instrumental/backing track using MusicGen.
+    Generate instrumental/backing track using AI music generation APIs.
     
     Args:
         lyrics: Song lyrics (used for context)
@@ -272,17 +393,72 @@ def generate_music_track(lyrics: str, genre: str = 'pop') -> tuple:
     Returns:
         Tuple of (audio_path, duration_in_seconds)
     
-    Models:
-        - facebook/musicgen-small (CC-BY-NC-4.0)
-        - facebook/musicgen-large (CC-BY-NC-4.0)
-    
-    Note: MusicGen weights are CC-BY-NC-4.0 (non-commercial use only).
-    For commercial applications, alternative open-source models should be used.
+    Supported APIs:
+        - Suno AI (via unofficial API)
+        - Mubert API (Free tier available)
+        - Fallback: Synthetic audio generation
     """
     
     # Generate prompt from genre and lyrics snippet
     first_line = lyrics.split('\n')[0] if lyrics else 'instrumental music'
     prompt = f"A {genre} song instrumental with {first_line.lower()}. High quality studio production."
+    
+    # Try Suno AI (if configured)
+    suno_api_key = getattr(settings, 'SUNO_API_KEY', None)
+    if suno_api_key and suno_api_key != 'your-suno-api-key-here':
+        try:
+            print("🎵 Using Suno AI for instrumental generation...")
+            # Suno AI API integration would go here
+            # Note: Suno doesn't have official API yet, using placeholder
+            print("⚠️  Suno AI not yet integrated. Using fallback.")
+        except Exception as e:
+            print(f"⚠️  Suno AI error: {str(e)}")
+    
+    # Try Mubert API (free tier available)
+    mubert_api_key = getattr(settings, 'MUBERT_API_KEY', None)
+    if mubert_api_key and mubert_api_key != 'your-mubert-api-key-here':
+        try:
+            print("🎵 Using Mubert API for instrumental generation...")
+            import requests
+            
+            api_url = "https://api-b2b.mubert.com/v2/RecordTrack"
+            
+            payload = {
+                "method": "RecordTrack",
+                "params": {
+                    "license": "license-free",
+                    "token": mubert_api_key,
+                    "format": "wav",
+                    "mode": genre.lower(),
+                    "duration": 30,
+                    "bitrate": 320
+                }
+            }
+            
+            response = requests.post(api_url, json=payload, timeout=60)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('status') == 1 and 'data' in result:
+                    download_url = result['data'].get('tasks', [{}])[0].get('download_link')
+                    
+                    if download_url:
+                        # Download the generated music
+                        output_path = os.path.join(settings.TEMP_AUDIO_DIR, f"instrumental_{uuid.uuid4()}.wav")
+                        audio_response = requests.get(download_url, timeout=60)
+                        
+                        with open(output_path, 'wb') as f:
+                            f.write(audio_response.content)
+                        
+                        print(f"✅ Successfully generated instrumental using Mubert API")
+                        return output_path, 30
+                        
+        except Exception as e:
+            print(f"⚠️  Mubert API error: {str(e)}")
+    
+    # Fallback: Synthetic audio generation
+    print("🎵 Generating synthetic instrumental (fallback)...")
+    print("💡 For AI-generated music, add MUBERT_API_KEY to .env (free tier available)")
     
     try:
         # Create a realistic instrumental placeholder
@@ -384,138 +560,170 @@ def generate_music_track(lyrics: str, genre: str = 'pop') -> tuple:
 
 def generate_singing_vocals(lyrics: str, genre: str = 'pop') -> tuple:
     """
-    Generate singing vocal track for lyrics.
-    
-    Args:
-        lyrics: Song lyrics to sing
-        genre: Music genre
-    
-    Returns:
-        Tuple of (audio_path, duration_in_seconds)
-    
-    Models:
-        - DiffSinger (MIT License) - Diffusion-based singing voice synthesis
-        - OpenVoice (MIT License alternative)
-        - TTS models converted to singing via RVC
-    
-    Implementation note: This is a simplified version. Production should:
-    1. Parse lyrics into phonemes
-    2. Extract melody from instrumental
-    3. Use DiffSinger to generate singing voice
-    4. Optionally apply RVC for voice conversion
+    Generate singing vocal track for lyrics using AI voice synthesis.
+
+    Supported APIs:
+        - ElevenLabs (Professional AI voice - Free tier: 10k chars/month)
+        - Uberduck AI (AI vocals - Free tier available)
+        - Fallback: Synthetic audio generation
     """
+
+    # Try ElevenLabs API first (best quality)
+    elevenlabs_api_key = os.getenv('ELEVENLABS_API_KEY')
+    if elevenlabs_api_key and elevenlabs_api_key != 'your-elevenlabs-api-key-here':
+        try:
+            print("🎤 Using ElevenLabs AI for vocal generation...")
+            
+            # Use a more suitable voice ID for singing (default is Adam)
+            target_voice_id = os.getenv('ELEVENLABS_VOICE_ID', 'pNInz6obpgDQGcFmaJgB')
+            
+            output_path = os.path.join(settings.TEMP_AUDIO_DIR, f"vocals_{uuid.uuid4()}.mp3")
+            api_url = f"https://api.elevenlabs.io/v1/text-to-speech/{target_voice_id}"
+
+            # Clean lyrics for better TTS (remove section markers)
+            clean_lyrics = lyrics.replace('[Verse 1]', '').replace('[Chorus]', '').replace('[Verse 2]', '').replace('[Bridge]', '').replace('[Outro]', '').strip()
+            
+            payload = {
+                "text": clean_lyrics,
+                "model_id": os.getenv('ELEVENLABS_MODEL_ID', 'eleven_multilingual_v2'),
+                "voice_settings": {
+                    "stability": float(os.getenv('ELEVENLABS_VOICE_STABILITY', '0.5')),
+                    "similarity_boost": float(os.getenv('ELEVENLABS_VOICE_SIMILARITY', '0.8')),
+                    "style": float(os.getenv('ELEVENLABS_VOICE_STYLE', '0.5')),
+                    "use_speaker_boost": True
+                },
+            }
+
+            headers = {
+                "xi-api-key": elevenlabs_api_key,
+                "Accept": "audio/mpeg",
+                "Content-Type": "application/json"
+            }
+
+            response = requests.post(api_url, json=payload, headers=headers, timeout=60)
+            
+            if response.status_code == 200:
+                with open(output_path, "wb") as f:
+                    f.write(response.content)
+
+                # Estimate duration based on word count (~0.4s per word)
+                words = len(clean_lyrics.split())
+                duration = max(10, int(words * 0.4))
+                
+                print(f"✅ Successfully generated vocals using ElevenLabs AI")
+                return output_path, duration
+            else:
+                print(f"⚠️  ElevenLabs API error {response.status_code}: {response.text[:200]}")
+
+        except Exception as exc:
+            print(f"⚠️  ElevenLabs vocal synthesis failed: {exc}")
+    
+    # Try Uberduck AI (alternative)
+    uberduck_key = os.getenv('UBERDUCK_API_KEY')
+    uberduck_secret = os.getenv('UBERDUCK_API_SECRET')
+    if uberduck_key and uberduck_secret:
+        try:
+            print("🎤 Using Uberduck AI for vocal generation...")
+            # Uberduck API integration would go here
+            print("⚠️  Uberduck AI not yet integrated. Using fallback.")
+        except Exception as e:
+            print(f"⚠️  Uberduck AI error: {str(e)}")
+
+    # Fallback: Synthetic vocal generation
+    print("🎤 Generating synthetic vocals (fallback)...")
+    print("💡 For AI-generated vocals, add ELEVENLABS_API_KEY to .env")
+    print("   Get free tier (10k chars/month): https://elevenlabs.io/api")
     
     try:
-        # Create a melodic vocal placeholder
-        # In production, use DiffSinger, SingingVoice, or commercial singing synthesis APIs
         import wave
         import numpy as np
-        
+
         output_path = os.path.join(settings.TEMP_AUDIO_DIR, f"vocals_{uuid.uuid4()}.wav")
-        
-        # Create a more realistic vocal melody
+
         sample_rate = 44100
-        duration = 25  # 25 seconds for demo vocals
+        duration = 25
         t = np.linspace(0, duration, int(sample_rate * duration), False)
-        
-        # Count syllables/words in lyrics to create rhythm
+
         clean_lyrics = lyrics.replace('\n', ' ').replace('Verse 1:', '').replace('Chorus:', '').replace('Bridge:', '').replace('Outro:', '')
         words = [w for w in clean_lyrics.split() if w.strip()]
-        
-        # Create melody based on genre
+
         if genre.lower() == 'pop':
-            base_freq = 220  # A3
-            scale = [1.0, 1.125, 1.25, 1.33, 1.5, 1.67, 1.875, 2.0]  # Major scale
+            base_freq = 220
+            scale = [1.0, 1.125, 1.25, 1.33, 1.5, 1.67, 1.875, 2.0]
         elif genre.lower() == 'rock':
-            base_freq = 196  # G3
+            base_freq = 196
             scale = [1.0, 1.125, 1.25, 1.33, 1.5, 1.67, 1.875, 2.0]
         elif genre.lower() == 'hip-hop':
-            base_freq = 165  # E3
+            base_freq = 165
             scale = [1.0, 1.2, 1.25, 1.4, 1.5, 1.7, 1.8, 2.0]
         else:
             base_freq = 220
             scale = [1.0, 1.125, 1.25, 1.33, 1.5, 1.67, 1.875, 2.0]
-        
+
         audio_data = np.zeros_like(t)
-        
-        # Generate melody based on lyrics structure
-        num_notes = min(len(words), 20)  # Limit to reasonable number
+        num_notes = min(len(words), 20)
         if num_notes > 0:
             note_duration = duration / num_notes
-            
             for i in range(num_notes):
                 start_time = i * note_duration
                 end_time = (i + 1) * note_duration
                 start_idx = int(start_time * sample_rate)
                 end_idx = int(end_time * sample_rate)
-                
-                # Choose note from scale based on word position
                 scale_pos = i % len(scale)
                 freq = base_freq * scale[scale_pos]
-                
-                # Create note with envelope
                 note_t = t[start_idx:end_idx] - start_time
-                note_length = end_time - start_time
-                
-                # Add vibrato for more natural sound
-                vibrato_rate = 5  # Hz
+
+                vibrato_rate = 5
                 vibrato_depth = 0.02
                 vibrato = 1 + vibrato_depth * np.sin(2 * np.pi * vibrato_rate * note_t)
-                
-                # Create note with attack, sustain, release envelope
+
                 envelope = np.ones_like(note_t)
-                attack_time = min(0.05, note_length * 0.2)
-                release_time = min(0.1, note_length * 0.3)
-                
+                attack_time = min(0.05, note_duration * 0.2)
+                release_time = min(0.1, note_duration * 0.3)
                 attack_samples = int(attack_time * sample_rate)
                 release_samples = int(release_time * sample_rate)
-                
+
                 if len(note_t) > attack_samples:
                     envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
                 if len(note_t) > release_samples:
                     envelope[-release_samples:] = np.linspace(1, 0, release_samples)
-                
-                # Generate note with harmonics for more realistic vocal sound
+
                 fundamental = np.sin(2 * np.pi * freq * vibrato * note_t)
                 harmonic2 = 0.3 * np.sin(2 * np.pi * freq * 2 * vibrato * note_t)
                 harmonic3 = 0.2 * np.sin(2 * np.pi * freq * 3 * vibrato * note_t)
-                
+
                 note_sound = (fundamental + harmonic2 + harmonic3) * envelope * 0.4
                 audio_data[start_idx:end_idx] += note_sound
-        
-        # Apply overall envelope
+
         overall_envelope = np.ones_like(audio_data)
         fade_samples = int(0.1 * sample_rate)
         overall_envelope[:fade_samples] = np.linspace(0, 1, fade_samples)
         overall_envelope[-fade_samples:] = np.linspace(1, 0, fade_samples)
         audio_data *= overall_envelope
-        
-        # Add subtle reverb
+
         reverb_delay = int(0.1 * sample_rate)
         if len(audio_data) > reverb_delay:
             reverb = np.zeros_like(audio_data)
             reverb[reverb_delay:] = audio_data[:-reverb_delay] * 0.3
             audio_data = 0.8 * audio_data + 0.2 * reverb
-        
-        # Normalize and convert to int16
+
         max_val = np.max(np.abs(audio_data))
         if max_val > 0:
             audio_data = (audio_data / max_val * 0.7 * 32767).astype(np.int16)
         else:
             audio_data = audio_data.astype(np.int16)
-        
-        # Save as WAV file
+
+        import wave
         with wave.open(output_path, 'w') as wav_file:
             wav_file.setnchannels(1)
             wav_file.setsampwidth(2)
             wav_file.setframerate(sample_rate)
             wav_file.writeframes(audio_data.tobytes())
-        
-        print(f"Generated {genre} vocals: {output_path}")
+
         return output_path, duration
-        
+
     except Exception as e:
-        print(f"Vocals generation error: {e}")
+        print(f"Vocal synthesis fallback error: {e}")
         raise RuntimeError(f"Vocal synthesis failed: {str(e)}. Please check system resources.")
 
 
