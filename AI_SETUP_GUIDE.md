@@ -1,6 +1,7 @@
 # 🎵 AuraLynx AI Music Generation Setup Guide
 
 Get your AuraLynx application generating **fully AI-powered music** with:
+
 - 🎵 **Unique Lyrics** (different every time!)
 - 🎤 **AI Vocals** (realistic singing voices)
 - 🎸 **AI Music** (instrumental tracks)
@@ -12,6 +13,7 @@ Get your AuraLynx application generating **fully AI-powered music** with:
 ### ✅ Groq API (FREE & FAST - RECOMMENDED)
 
 **Why Groq?**
+
 - Completely FREE (no credit card!)
 - Very FAST (1-2 seconds)
 - 14,400 requests/day
@@ -36,6 +38,7 @@ Get your AuraLynx application generating **fully AI-powered music** with:
 ### ✅ ElevenLabs (FREE tier: 10k chars/month)
 
 **Why ElevenLabs?**
+
 - Best quality AI voice synthesis
 - FREE tier: ~10-15 songs/month
 - Realistic singing voices
@@ -52,6 +55,7 @@ Get your AuraLynx application generating **fully AI-powered music** with:
 7. Restart backend server
 
 **Optional: Choose different voice**
+
 - Browse: <https://elevenlabs.io/voice-library>
 - Copy voice ID
 - Add to `.env`: `ELEVENLABS_VOICE_ID=voice_id_here`
@@ -93,6 +97,7 @@ MUBERT_API_KEY=your_mubert_key
 ```
 
 **With just Groq + ElevenLabs:**
+
 - ✅ AI-generated unique lyrics
 - ✅ AI-generated realistic vocals
 - ⚠️  Synthetic instrumental (still works!)
@@ -131,23 +136,28 @@ MUBERT_API_KEY=your_mubert_key
 ## 🔧 Troubleshooting
 
 ### ❌ "Creating template-based lyrics as fallback"
+
 - Check: Did you add `GROQ_API_KEY` to `.env`?
 - Check: No spaces around `=` sign
 - Check: Restarted backend server?
 - Check: Backend terminal for errors
 
 ### ❌ "Generating synthetic vocals (fallback)"
+
 - This means ElevenLabs not configured
 - Add `ELEVENLABS_API_KEY` to `.env`
 - Synthetic vocals work but aren't realistic
 
 ### ❌ API Rate Limit Errors
+
 - **Groq:** 30 requests/minute limit - wait 60 seconds
 - **ElevenLabs:** Monthly limit - upgrade or wait for reset
 - **Solution:** Cache generated songs (coming soon)
 
-### ✅ Everything Working!
+### ✅ Everything Working
+
 You should see:
+
 - Different lyrics each time ✅
 - Realistic AI vocals ✅
 - No "fallback" messages ✅

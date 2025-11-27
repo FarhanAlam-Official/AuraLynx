@@ -137,5 +137,3 @@ Model choices are centralized in the Django settings and utility functions:
 
 Always make sure your environment variables are set in your deployment platform
 before starting the app, and never commit real secrets to the repository.
-
-
