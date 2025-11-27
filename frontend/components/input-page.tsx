@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { buildApiUrl } from '@/lib/utils'
 import { ArrowLeft, Upload, Mic, Square } from 'lucide-react'
 import Visualizer from './visualizer'
 
@@ -68,13 +69,35 @@ export default function InputPage({
     if (!recordedAudio) return
 
     setIsTranscribing(true)
-    // Mock transcription - in production, this would call Whisper API
-    setTimeout(() => {
-      setIsTranscribing(false)
-      const mockTranscript =
+
+    try {
+      const formData = new FormData()
+      formData.append('audio_file', recordedAudio, 'input.wav')
+
+      const response = await fetch(buildApiUrl('/transcribe/'), {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Transcription failed: ${response.status}`)
+      }
+
+      const data = await response.json()
+      if (!data.success || !data.transcribed_text) {
+        throw new Error(data.error || 'No transcription returned from server')
+      }
+
+      onSubmit(data.transcribed_text)
+    } catch (error) {
+      console.error('Error transcribing audio:', error)
+      // Fallback: keep current behaviour if backend is unavailable
+      const fallbackTranscript =
         'Create a song about chasing dreams under moonlight with electronic vibes'
-      onSubmit(mockTranscript)
-    }, 2000)
+      onSubmit(fallbackTranscript)
+    } finally {
+      setIsTranscribing(false)
+    }
   }
 
   const handleSubmitText = () => {

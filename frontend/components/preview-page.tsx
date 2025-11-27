@@ -3,9 +3,12 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Play, Pause, Download, Share2, RotateCcw, Volume2, Eye, EyeOff } from 'lucide-react'
+import { Play, Pause, Download, Share2, RotateCcw, Volume2, Eye, EyeOff, User } from 'lucide-react'
 import AudioPlayer from './audio-player'
 import MixingControls from './mixing-controls'
+import { useAuth } from '@/components/auth-context'
+import { AuthDialog } from '@/components/auth-dialog'
+import { buildApiUrl } from '@/lib/utils'
 
 interface PreviewPageProps {
   lyrics: string
@@ -14,6 +17,7 @@ interface PreviewPageProps {
   vocalsUrl: string
   finalMixUrl: string
   onRestart: () => void
+  onViewSongs: () => void
 }
 
 export default function PreviewPage({
@@ -23,11 +27,52 @@ export default function PreviewPage({
   vocalsUrl,
   finalMixUrl,
   onRestart,
+  onViewSongs,
 }: PreviewPageProps) {
   const [showVocals, setShowVocals] = useState(true)
   const [showInstrumental, setShowInstrumental] = useState(true)
   const [isPlaying, setIsPlaying] = useState(false)
   const [showLyrics, setShowLyrics] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [authOpen, setAuthOpen] = useState(false)
+  const { user, accessToken } = useAuth()
+
+  const handleSaveSong = async () => {
+    if (!accessToken) {
+      setAuthOpen(true)
+      return
+    }
+
+    try {
+      setSaving(true)
+      setSaveError(null)
+      const res = await fetch(buildApiUrl('/songs/'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          title: `AuraLynx ${genre} song`,
+          genre,
+          lyrics,
+          instrumental_url: instrumentalUrl,
+          vocals_url: vocalsUrl,
+          mix_url: finalMixUrl,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.detail || 'Failed to save song')
+      }
+    } catch (error) {
+      console.error(error)
+      setSaveError(error instanceof Error ? error.message : 'Failed to save song')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleDownload = (format: 'mp3' | 'wav') => {
     // In production, this would download the actual file
@@ -53,17 +98,33 @@ export default function PreviewPage({
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-white">Your Song</h1>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRestart}
-            className="text-slate-300 border-slate-600"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Create New
-          </Button>
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="flex items-center text-xs text-slate-300 bg-slate-800/70 rounded-full px-3 py-1">
+                <User className="w-3 h-3 mr-1" />
+                <span>{user.username}</span>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRestart}
+              className="text-slate-300 border-slate-600"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Create New
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onViewSongs}
+              className="bg-slate-800 text-slate-100 border border-slate-600"
+            >
+              View saved songs
+            </Button>
+          </div>
         </div>
 
         {/* Progress indicator */}
@@ -77,6 +138,12 @@ export default function PreviewPage({
             />
           ))}
         </div>
+
+        {saveError && (
+          <div className="mb-4 bg-red-900/30 border border-red-700 rounded-lg p-3 text-xs text-red-200">
+            {saveError}
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Player */}
@@ -162,10 +229,17 @@ export default function PreviewPage({
               </div>
             </Card>
 
-            {/* Download & Share */}
+            {/* Save, Download & Share */}
             <Card className="bg-slate-800/50 border-slate-700 p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Export</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">Save & Export</h2>
               <div className="space-y-3">
+                <Button
+                  onClick={handleSaveSong}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={saving}
+                >
+                  {saving ? 'Saving…' : user ? 'Save to your account' : 'Sign in to save'}
+                </Button>
                 <Button
                   onClick={() => handleDownload('mp3')}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -201,6 +275,8 @@ export default function PreviewPage({
             </Card>
           </div>
         </div>
+
+        <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
       </div>
     </div>
   )

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { buildApiUrl } from '@/lib/utils'
 import { ArrowLeft, Edit2, Check, Loader2 } from 'lucide-react'
 
 interface LyricsPageProps {
@@ -47,7 +48,7 @@ export default function LyricsPage({
     
     try {
       console.log('Generating lyrics for:', inputText)
-      const response = await fetch('http://localhost:8000/api/generate-lyrics/', {
+      const response = await fetch(buildApiUrl('/generate-lyrics/'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
